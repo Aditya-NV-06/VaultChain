@@ -1,0 +1,40 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [prchecker]  
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2 
+
+      - name: Deploy code
+        run: |
+          # Your deployment command here, e.g., npm run deploy or ./deploy.sh
+          echo "Deploying code..."
+
+      - name: Report deploy result
+        uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const status = 'success'; // Change this based on your deployment result
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: context.payload.workflow_run.head_sha,
+              name: 'Deploy',
+              status: status === 'success' ? 'completed' : 'in_progress',
+              conclusion: status,
+              output: {
+                title: "Deployment Results",
+                summary: status === 'success' ? "Deployment succeeded!" : "Deployment failed."
+              }
+            });

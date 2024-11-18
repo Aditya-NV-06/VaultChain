@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  workflow_run:
+    workflows: [prchecker] 
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  
+
+      - name: Run tests
+        run: |
+          # Your test command here, e.g., npm test or pytest
+          echo "Running tests..."
+
+      - name: Report test result
+        uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const status = 'success'; // Change this based on your test results
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: context.payload.workflow_run.head_sha,
+              name: 'Test',
+              status: status === 'success' ? 'completed' : 'in_progress',
+              conclusion: status,
+              output: {
+                title: "Test Results",
+                summary: status === 'success' ? "All tests passed!" : "Some tests failed."
+              }
+            });

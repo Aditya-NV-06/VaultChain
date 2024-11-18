@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  workflow_run:
+    workflows: [prchecker]  
+    branches: [main]
+    types:
+      - completed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2 
+
+      - name: Build code
+        run: |
+          # Your build command here, e.g., npm run build or make
+          echo "Building the code..."
+
+      - name: Report build result
+        uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const status = 'success'; // Change this based on your build result
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: context.payload.workflow_run.head_sha,
+              name: 'Build',
+              status: 'completed', // Set to 'completed' when done
+              conclusion: status, // Set conclusion based on success or failure
+              output: {
+                title: "Build Results",
+                summary: status === 'success' ? "Build succeeded!" : "Build failed."
+              }
+            });
